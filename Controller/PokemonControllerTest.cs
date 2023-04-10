@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using FakeItEasy;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PokemonReview.Controllers;
 using PokemonReview.Dto;
@@ -200,5 +201,141 @@ namespace PokemonReview.Tests.Controller
             result.ActionName.Should().Be("GetPokemon");
         }
 
+        [Fact]
+        public void PokemonController_PostPokemon_ReturnBadRequest_Null()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+
+            //Act
+            var result = controller.PostPokemon(null);
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(BadRequestObjectResult));
+        }
+
+        [Fact]
+        public void PokemonController_PostPokemon_ReturnBadRequest_ModelStateInvalid()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            var pokemon = A.Fake<PokemonPostDto>();
+            controller.ModelState.AddModelError("test", "test");
+
+            //Act
+            var result = controller.PostPokemon(pokemon);
+            
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(BadRequestObjectResult));
+        }
+
+        [Fact]
+        public void PokemonController_PostPokemon_ReturnUnprocessableEntity_PokemonExists()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            var pokemon = A.Fake<PokemonPostDto>();
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(pokemon.Name)).Returns(true);
+
+            //Act
+            var result = controller.PostPokemon(pokemon) as ObjectResult;
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(ObjectResult));
+            result.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+            result.Value.Should().Be("This pokemon already exists.");
+        }
+
+        [Fact]
+        public void PokemonController_PostPokemon_ReturnUnprocessableEntity_CategoryDontExists()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            var pokemon = A.Fake<PokemonPostDto>();
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(pokemon.Name)).Returns(false);
+            A.CallTo(() => _categoryRepository.CategoryExists(pokemon.CategoryId)).Returns(false);
+            
+            //Act
+            var result = controller.PostPokemon(pokemon) as ObjectResult;
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(ObjectResult));
+            result.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+            result.Value.Should().Be("This category doesn't exist, please check the id and try again.");
+        }
+
+        [Fact]
+        public void PokemonController_PostPokemon_ReturnUnprocessableEntity_OwnerDontExists()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            var pokemon = A.Fake<PokemonPostDto>();
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(pokemon.Name)).Returns(false);
+            A.CallTo(() => _categoryRepository.CategoryExists(pokemon.CategoryId)).Returns(true);
+            A.CallTo(() => _ownerRepository.OwnerExists(pokemon.OwnerId)).Returns(false);
+
+            //Act
+            var result = controller.PostPokemon(pokemon) as ObjectResult;
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(ObjectResult));
+            result.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+            result.Value.Should().Be("This owner doesn't exist, please check the id and try again.");
+        }
+
+        [Fact]
+        public void PokemonController_PostPokemon_ReturnUnprocessableEntity_TypeDontExists()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            var pokemon = A.Fake<PokemonPostDto>();
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(pokemon.Name)).Returns(false);
+            A.CallTo(() => _categoryRepository.CategoryExists(pokemon.CategoryId)).Returns(true);
+            A.CallTo(() => _ownerRepository.OwnerExists(pokemon.OwnerId)).Returns(true);
+            A.CallTo(() => _typeRepository.TypeExists(pokemon.TypeId)).Returns(false);
+
+            //Act
+            var result = controller.PostPokemon(pokemon) as ObjectResult;
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(ObjectResult));
+            result.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+            result.Value.Should().Be("This type doesn't exist, please check the id and try again.");
+        }
+
+        [Fact]
+        public void PokemonController_PostPokemon_ReturnInternalServerError()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            var pokemon = A.Fake<PokemonPostDto>();
+            var pokemonMapped = A.Fake<Pokemon>();
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(pokemon.Name)).Returns(false);
+            A.CallTo(() => _categoryRepository.CategoryExists(pokemon.CategoryId)).Returns(true);
+            A.CallTo(() => _ownerRepository.OwnerExists(pokemon.OwnerId)).Returns(true);
+            A.CallTo(() => _typeRepository.TypeExists(pokemon.TypeId)).Returns(true);
+            A.CallTo(() => _pokemonRepository.CreatePokemon(pokemonMapped, pokemon.CategoryId, pokemon.OwnerId, pokemon.TypeId)).Returns(false);
+
+            //Act
+            var result = controller.PostPokemon(pokemon) as ObjectResult;
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(ObjectResult));
+            result.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+            result.Value.Should().Be("Something went wrong saving this pokemon.");
+        }
     }
 }
