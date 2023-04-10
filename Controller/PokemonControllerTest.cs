@@ -117,6 +117,61 @@ namespace PokemonReview.Tests.Controller
         }
 
         [Fact]
+        public void PokemonController_GetPokemonByName_ReturnNotFound()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            var name = "Test";
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(name)).Returns(false);
+
+            //Act
+            var result = controller.GetPokemon(name);
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(NotFoundResult));
+
+        }
+
+        [Fact]
+        public void PokemonController_GetPokemonByName_ReturnBadRequest()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            var name = "Test";
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(name)).Returns(true);
+            controller.ModelState.AddModelError("test", "test");
+
+            //Act
+            var result = controller.GetPokemon(name);
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(BadRequestObjectResult));
+
+        }
+
+        [Fact]
+        public void PokemonController_GetPokemonByName_ReturnOk()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            var name = "Test";
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(name)).Returns(true);
+
+            //Act
+            var result = controller.GetPokemon(name);
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(OkObjectResult));
+
+        }
+
+        [Fact]
         public void PokemonController_PostPokemon_ReturnCreatedAtAction()
         {
             //Arrange
