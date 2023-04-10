@@ -37,7 +37,7 @@ namespace PokemonReview.Tests.Controller
             var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
 
             //Act
-            var result = controller.getPokemons();
+            var result = controller.GetPokemons();
 
             //Assert
             result.Should().NotBeNull();
@@ -52,7 +52,7 @@ namespace PokemonReview.Tests.Controller
             controller.ModelState.AddModelError("test", "test");
 
             //Act
-            var result = controller.getPokemons();
+            var result = controller.GetPokemons();
 
             //Assert
             result.Should().NotBeNull();
@@ -80,11 +80,12 @@ namespace PokemonReview.Tests.Controller
             var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
 
             //Act
-            var result = controller.PostPokemon(pokemonDto);
+            var result = controller.PostPokemon(pokemonDto) as CreatedAtActionResult; ;
 
             //Assert
             result.Should().NotBeNull();
             result.Should().BeOfType(typeof(CreatedAtActionResult));
+            result.ActionName.Should().Be("GetPokemon");
         }
 
     }
