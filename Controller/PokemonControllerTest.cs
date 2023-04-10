@@ -60,6 +60,63 @@ namespace PokemonReview.Tests.Controller
         }
 
         [Fact]
+        public void PokemonController_GetPokemon_ReturnNotFound()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            int id = 1;
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(id)).Returns(false);
+
+            //Act
+            var result = controller.GetPokemon(id);
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(NotFoundResult));
+
+        }
+
+        [Fact]
+        public void PokemonController_GetPokemon_ReturnBadRequest()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            var id = 1;
+
+            A.CallTo(() => _pokemonRepository.PokemonExists(id)).Returns(true);
+            controller.ModelState.AddModelError("test", "test");
+            
+            //Act
+            var result = controller.GetPokemon(id);
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(BadRequestObjectResult));
+
+        }
+
+        [Fact]
+        public void PokemonController_GetPokemon_ReturnOk()
+        {
+            //Arrange
+            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            var id = 1;
+            var pokemon = A.Fake<PokemonDto>();
+            
+            A.CallTo(() => _mapper.Map<PokemonDto>(_pokemonRepository.GetPokemon(id))).Returns(pokemon); 
+            A.CallTo(() => _pokemonRepository.PokemonExists(id)).Returns(true);
+
+            //Act
+            var result = controller.GetPokemon(id);
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(OkObjectResult));
+
+        }
+
+        [Fact]
         public void PokemonController_PostPokemon_ReturnCreatedAtAction()
         {
             //Arrange
