@@ -11,13 +11,14 @@ using PokemonReview.Repository;
 
 namespace PokemonReview.Tests.Controller
 {
-    public class PokemonControllerTest
+    public class PokemonControllerTest :IDisposable
     {
         private readonly IPokemonRepository _pokemonRepository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly IOwnerRepository _ownerRepository;
         private readonly ITypeRepository _typeRepository;
         private readonly IMapper _mapper;
+        private readonly PokemonController _pokemonController;
 
         public PokemonControllerTest()
         {
@@ -26,6 +27,12 @@ namespace PokemonReview.Tests.Controller
             _ownerRepository = A.Fake<IOwnerRepository>();
             _typeRepository = A.Fake<ITypeRepository>();
             _mapper = A.Fake<IMapper>();
+            _pokemonController = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+        }
+
+        public void Dispose()
+        {
+            _pokemonController.Dispose();
         }
 
         [Fact]
@@ -35,10 +42,10 @@ namespace PokemonReview.Tests.Controller
             var pokemons = A.Fake<ICollection<PokemonDto>>();
             var pokemonList = A.Fake<List<PokemonDto>>();
             A.CallTo(() => _mapper.Map<List<PokemonDto>>(pokemons)).Returns(pokemonList);
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
+            
 
             //Act
-            var result = controller.GetPokemons();
+            var result = _pokemonController.GetPokemons();
 
             //Assert
             result.Should().NotBeNull();
@@ -49,11 +56,10 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_GetPokemons_ReturnBadRequest()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
-            controller.ModelState.AddModelError("test", "test");
+            _pokemonController.ModelState.AddModelError("test", "test");
 
             //Act
-            var result = controller.GetPokemons();
+            var result = _pokemonController.GetPokemons();
 
             //Assert
             result.Should().NotBeNull();
@@ -64,13 +70,12 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_GetPokemon_ReturnNotFound()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
             int id = 1;
 
             A.CallTo(() => _pokemonRepository.PokemonExists(id)).Returns(false);
 
             //Act
-            var result = controller.GetPokemon(id);
+            var result = _pokemonController.GetPokemon(id);
 
             //Assert
             result.Should().NotBeNull();
@@ -82,14 +87,13 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_GetPokemon_ReturnBadRequest()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
             var id = 1;
 
             A.CallTo(() => _pokemonRepository.PokemonExists(id)).Returns(true);
-            controller.ModelState.AddModelError("test", "test");
+            _pokemonController.ModelState.AddModelError("test", "test");
             
             //Act
-            var result = controller.GetPokemon(id);
+            var result = _pokemonController.GetPokemon(id);
 
             //Assert
             result.Should().NotBeNull();
@@ -101,7 +105,6 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_GetPokemon_ReturnOk()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
             var id = 1;
             var pokemon = A.Fake<PokemonDto>();
             
@@ -109,7 +112,7 @@ namespace PokemonReview.Tests.Controller
             A.CallTo(() => _pokemonRepository.PokemonExists(id)).Returns(true);
 
             //Act
-            var result = controller.GetPokemon(id);
+            var result = _pokemonController.GetPokemon(id);
 
             //Assert
             result.Should().NotBeNull();
@@ -121,13 +124,12 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_GetPokemonByName_ReturnNotFound()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
             var name = "Test";
 
             A.CallTo(() => _pokemonRepository.PokemonExists(name)).Returns(false);
 
             //Act
-            var result = controller.GetPokemon(name);
+            var result = _pokemonController.GetPokemon(name);
 
             //Assert
             result.Should().NotBeNull();
@@ -139,14 +141,13 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_GetPokemonByName_ReturnBadRequest()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
             var name = "Test";
 
             A.CallTo(() => _pokemonRepository.PokemonExists(name)).Returns(true);
-            controller.ModelState.AddModelError("test", "test");
+            _pokemonController.ModelState.AddModelError("test", "test");
 
             //Act
-            var result = controller.GetPokemon(name);
+            var result = _pokemonController.GetPokemon(name);
 
             //Assert
             result.Should().NotBeNull();
@@ -158,13 +159,12 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_GetPokemonByName_ReturnOk()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
             var name = "Test";
 
             A.CallTo(() => _pokemonRepository.PokemonExists(name)).Returns(true);
 
             //Act
-            var result = controller.GetPokemon(name);
+            var result = _pokemonController.GetPokemon(name);
 
             //Assert
             result.Should().NotBeNull();
@@ -190,10 +190,8 @@ namespace PokemonReview.Tests.Controller
             A.CallTo(() => _mapper.Map<Pokemon>(pokemonDto)).Returns(pokemon);
             A.CallTo(() => _pokemonRepository.CreatePokemon(pokemon, pokemonDto.CategoryId, pokemonDto.OwnerId, pokemonDto.TypeId)).Returns(true);
 
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
-
             //Act
-            var result = controller.PostPokemon(pokemonDto) as CreatedAtActionResult; ;
+            var result = _pokemonController.PostPokemon(pokemonDto) as CreatedAtActionResult; ;
 
             //Assert
             result.Should().NotBeNull();
@@ -205,10 +203,9 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_PostPokemon_ReturnBadRequest_Null()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
-
+            
             //Act
-            var result = controller.PostPokemon(null);
+            var result = _pokemonController.PostPokemon(null);
 
             //Assert
             result.Should().NotBeNull();
@@ -219,12 +216,11 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_PostPokemon_ReturnBadRequest_ModelStateInvalid()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
             var pokemon = A.Fake<PokemonPostDto>();
-            controller.ModelState.AddModelError("test", "test");
+            _pokemonController.ModelState.AddModelError("test", "test");
 
             //Act
-            var result = controller.PostPokemon(pokemon);
+            var result = _pokemonController.PostPokemon(pokemon);
             
 
             //Assert
@@ -236,13 +232,12 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_PostPokemon_ReturnUnprocessableEntity_PokemonExists()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
             var pokemon = A.Fake<PokemonPostDto>();
 
             A.CallTo(() => _pokemonRepository.PokemonExists(pokemon.Name)).Returns(true);
 
             //Act
-            var result = controller.PostPokemon(pokemon) as ObjectResult;
+            var result = _pokemonController.PostPokemon(pokemon) as ObjectResult;
 
             //Assert
             result.Should().NotBeNull();
@@ -255,14 +250,13 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_PostPokemon_ReturnUnprocessableEntity_CategoryDontExists()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
             var pokemon = A.Fake<PokemonPostDto>();
 
             A.CallTo(() => _pokemonRepository.PokemonExists(pokemon.Name)).Returns(false);
             A.CallTo(() => _categoryRepository.CategoryExists(pokemon.CategoryId)).Returns(false);
             
             //Act
-            var result = controller.PostPokemon(pokemon) as ObjectResult;
+            var result = _pokemonController.PostPokemon(pokemon) as ObjectResult;
 
             //Assert
             result.Should().NotBeNull();
@@ -275,7 +269,6 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_PostPokemon_ReturnUnprocessableEntity_OwnerDontExists()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
             var pokemon = A.Fake<PokemonPostDto>();
 
             A.CallTo(() => _pokemonRepository.PokemonExists(pokemon.Name)).Returns(false);
@@ -283,7 +276,7 @@ namespace PokemonReview.Tests.Controller
             A.CallTo(() => _ownerRepository.OwnerExists(pokemon.OwnerId)).Returns(false);
 
             //Act
-            var result = controller.PostPokemon(pokemon) as ObjectResult;
+            var result = _pokemonController.PostPokemon(pokemon) as ObjectResult;
 
             //Assert
             result.Should().NotBeNull();
@@ -296,7 +289,6 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_PostPokemon_ReturnUnprocessableEntity_TypeDontExists()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
             var pokemon = A.Fake<PokemonPostDto>();
 
             A.CallTo(() => _pokemonRepository.PokemonExists(pokemon.Name)).Returns(false);
@@ -305,7 +297,7 @@ namespace PokemonReview.Tests.Controller
             A.CallTo(() => _typeRepository.TypeExists(pokemon.TypeId)).Returns(false);
 
             //Act
-            var result = controller.PostPokemon(pokemon) as ObjectResult;
+            var result = _pokemonController.PostPokemon(pokemon) as ObjectResult;
 
             //Assert
             result.Should().NotBeNull();
@@ -318,7 +310,6 @@ namespace PokemonReview.Tests.Controller
         public void PokemonController_PostPokemon_ReturnInternalServerError()
         {
             //Arrange
-            var controller = new PokemonController(_pokemonRepository, _categoryRepository, _ownerRepository, _typeRepository, _mapper);
             var pokemon = A.Fake<PokemonPostDto>();
             var pokemonMapped = A.Fake<Pokemon>();
 
@@ -329,7 +320,7 @@ namespace PokemonReview.Tests.Controller
             A.CallTo(() => _pokemonRepository.CreatePokemon(pokemonMapped, pokemon.CategoryId, pokemon.OwnerId, pokemon.TypeId)).Returns(false);
 
             //Act
-            var result = controller.PostPokemon(pokemon) as ObjectResult;
+            var result = _pokemonController.PostPokemon(pokemon) as ObjectResult;
 
             //Assert
             result.Should().NotBeNull();
