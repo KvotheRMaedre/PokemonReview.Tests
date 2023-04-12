@@ -109,5 +109,51 @@ namespace PokemonReview.Tests.Controller
             result.Should().NotBeNull();
             result.Should().BeOfType(typeof(OkObjectResult));
         }
+
+        [Fact]
+        public void CategoryController_GetCategory_ByName_ReturnNotFound()
+        {
+            //Arrange
+            var name = "test";
+            A.CallTo(() => _categoryRepository.CategoryExists(name)).Returns(false);
+
+            //Act
+            var result = _categoryController.GetCategory(name);
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(NotFoundResult));
+        }
+
+        [Fact]
+        public void CategoryController_GetCategory_ByName_ReturnBadRequest()
+        {
+            //Arrange
+            var name = "test";
+            A.CallTo(() => _categoryRepository.CategoryExists(name)).Returns(true);
+            _categoryController.ModelState.AddModelError("test", "test");
+
+            //Act
+            var result = _categoryController.GetCategory(name);
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(BadRequestObjectResult));
+        }
+
+        [Fact]
+        public void CategoryController_GetCategory_ByName_ReturnOk()
+        {
+            //Arrange
+            var name = "test";
+            A.CallTo(() => _categoryRepository.CategoryExists(name)).Returns(true);
+
+            //Act
+            var result = _categoryController.GetCategory(name);
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeOfType(typeof(OkObjectResult));
+        }
     }
 }
